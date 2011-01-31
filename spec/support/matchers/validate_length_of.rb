@@ -5,8 +5,10 @@ RSpec::Matchers.define :validate_length_of do |expected, options|
   @attribute = expected
   
   match do |actual|
-    validate_minimum_of object if options[:minimum]
-    validate_maximum_of object if options[:maximum]
+    validate_minimum_of object, @options[:minimum] if @options[:minimum]
+    validate_maximum_of object, @options[:maximum] if @options[:maximum]
+    validate_exact_length_of object, @options[:is] if @options[:is]
+    validate_range_of object, @options[:within] if @options[:within]
   end
 
   failure_message_for_should do |actual|
@@ -21,8 +23,8 @@ RSpec::Matchers.define :validate_length_of do |expected, options|
     "validate the length of #{@attribute}"
   end
   
-  def validate_minimum_of object
-    string = 'x' * @options[:minimum]
+  def validate_minimum_of object, minimum
+    string = 'x' * minimum
     
     set_tostring
     object.valid?
@@ -33,8 +35,8 @@ RSpec::Matchers.define :validate_length_of do |expected, options|
     object.errors[@attribute].should include(@options[:message])
   end
 
-  def validate_maximum_of object
-    string = 'x' * @options[:maximum]
+  def validate_maximum_of object, maximum
+    string = 'x' * maximum
     
     set_to string
     object.valid?
@@ -43,6 +45,29 @@ RSpec::Matchers.define :validate_length_of do |expected, options|
     set_to string + 'x'
     object.should_not be_valid
     object.errors[@attribute].should include(@options[:message])
+  end
+  
+  def validate_exact_length_of object, length
+    string = 'x' * length
+    
+    set_to string
+    object.valid?
+    object.errors[@attribute].should_not include(@options[:message])
+
+    set_to string.chop
+    object.should_not be_valid
+    object.errors[@attribute].should include(@options[:message])
+
+    set_to string + 'xx'
+    object.should_not be_valid
+    object.errors[@attribute].should include(@options[:message])
+  end
+  
+  def validate_range_of object, range
+    minimum, maximum = [range.first, range.last].sort
+    
+    validate_minimum_of object, minimum
+    validate_maximum_of object, maximum
   end
 
   def object
