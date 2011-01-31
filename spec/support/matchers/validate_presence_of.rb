@@ -1,33 +1,33 @@
 RSpec::Matchers.define :validate_presence_of do |expected, options|
+  @options = {:message => "can't be blank", :with => 'x'}
+  @options.merge!(options) if options.is_a?(Hash)
+  
+  @attribute = expected
+  
   match do |actual|
-    object.send("#{expected}=", value(options))
+    set_to @options[:with]
     object.valid?
-    object.errors[expected].should_not include(error_message(options))
+    object.errors[@attribute].should_not include(@options[:message])
 
-    object.send("#{expected}=", nil)
+    set_to nil
     object.should_not be_valid
-    object.errors[expected].should include(error_message(options))
+    object.errors[@attribute].should include(@options[:message])
 
-    object.send("#{expected}=", '')
+    set_to ""
     object.should_not be_valid
-    object.errors[expected].should include(error_message(options))
+    object.errors[@attribute].should include(@options[:message])
   end
 
   failure_message_for_should do |actual|
-    %(expected #{object.class}'s #{expected} errors to contain "#{error_message(options)}")
+    %(expected #{object.class}'s #{@attribute} errors to contain "#{@options[:message]}")
   end
 
   failure_message_for_should_not do |actual|
-    %(expected #{object.class}'s #{expected} errors not to contain "#{error_message(options)}")
+    %(expected #{object.class}'s #{@attribute} errors not to contain "#{@options[:message]}")
   end
 
   description do
-    "validate the presence of #{expected}"
-  end
-  
-  def error_message options
-    return @error_message if defined?(@error_message)
-    @error_message = options.is_a?(Hash) && options.has_key?(:message) ? options[:message] : "can't be blank"
+    "validate the presence of #{@attribute}"
   end
   
   def object
@@ -35,8 +35,7 @@ RSpec::Matchers.define :validate_presence_of do |expected, options|
     @object = actual.is_a?(Class) ? actual.new : actual
   end
   
-  def value options
-    return @value if defined?(@value)
-    @value = options.is_a?(Hash) && options.has_key?(:with) ? options[:with] : 'x'
+  def set_to value
+    object.send("#{@attribute}=", value)
   end
 end
