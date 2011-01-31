@@ -26,7 +26,7 @@ RSpec::Matchers.define :validate_length_of do |expected, options|
   def validate_minimum_of object, minimum
     string = 'x' * minimum
     
-    set_tostring
+    set_to string
     object.valid?
     object.errors[@attribute].should_not include(@options[:message])
 
