@@ -11,53 +11,10 @@ describe Subject do
     subject.teacher.should == teacher
   end
   
-  describe "name" do
-    it "is present" do
-      error_message = "can't be blank"
-      
-      subject = Subject.new :name => 'Joe Example'
-      subject.valid?
-      subject.errors[:name].should_not include(error_message)
+  it {should validate_presence_of :name}
+  it {should validate_length_of :name, :maximum => 50, :message => "must be 50 characters or less"}
 
-      subject.name = nil
-      subject.should_not be_valid
-      subject.errors[:name].should include(error_message)
-
-      subject.name = ''
-      subject.should_not be_valid
-      subject.errors[:name].should include(error_message)
-    end
-
-    it "is at most 50 characters" do
-      error_message = "must be 50 characters or less"
-      subject = Subject.new :name => 'x' * 50
-      subject.valid?
-      subject.errors[:name].should_not include(error_message)
-
-      subject.name += 'x'
-      subject.should_not be_valid
-      subject.errors[:name].should include(error_message)
-    end
-  end
-  
-  describe "number" do
-    it "is present" do
-      error_message = "can't be blank"
-
-      subject = Subject.new :number => 240
-      subject.valid?
-      subject.errors[:number].should_not include(error_message)
-
-      subject.number = nil
-      subject.should_not be_valid
-      subject.errors[:number].should include(error_message)
-
-      subject.number = ''
-      subject.should_not be_valid
-      subject.errors[:number].should include(error_message)
-    end
-  end
-
+  it {should validate_presence_of :number}
   
   describe "teacher" do
     it "is present" do
