@@ -4,6 +4,8 @@ gem 'rails', '3.0.3'
 
 group :development, :test do
   gem 'rspec-rails'
+  gem 'factory_girl'
+  gem 'autotest'
 end
 
 # Bundle edge Rails instead:
