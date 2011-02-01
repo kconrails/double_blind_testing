@@ -5,37 +5,51 @@ RSpec::Matchers.define :validate_presence_of do |expected, options|
   @attribute = expected
   
   match do |actual|
+    @object = actual.is_a?(Class) ? actual.new : actual
+    @result = true
+    
     set_to @options[:with]
-    object.valid?
-    object.errors[@attribute].should_not include(@options[:message])
+    @object.valid?
+    check !@object.errors[@attribute].include?(@options[:message]), "didn't allow #{@options[:with]}"
 
     set_to nil
-    object.should_not be_valid
-    object.errors[@attribute].should include(@options[:message])
+    check !@object.valid?, "was valid when nil"
+    check @object.errors[@attribute].include?(@options[:message]), "it allowed nil"
 
     set_to ""
-    object.should_not be_valid
-    object.errors[@attribute].should include(@options[:message])
+    check !@object.valid?, "was valid when blank"
+    check @object.errors[@attribute].include?(@options[:message]), "it allowed blank"
+
+    @result
   end
 
   failure_message_for_should do |actual|
-    %(expected #{object.class}'s #{@attribute} errors to contain "#{@options[:message]}")
+    %(expected #{@object.class} to require #{@attribute}, but #{@error_messages.join(', ')}")
   end
 
   failure_message_for_should_not do |actual|
-    %(expected #{object.class}'s #{@attribute} errors not to contain "#{@options[:message]}")
+    %(expected #{@object.class} to not require #{@attribute}, but #{@error_messages.join(', ')}")
   end
 
   description do
     "validate the presence of #{@attribute}"
   end
   
-  def object
-    return @object if defined?(@object)
-    @object = actual.is_a?(Class) ? actual.new : actual
-  end
-  
   def set_to value
-    object.send("#{@attribute}=", value)
+    @object.send("#{@attribute}=", value)
+  end
+
+  def check expression, message
+    @error_messages ||= []
+    
+    unless expression
+      @result = false
+      @error_messages << message
+    end
+  end
+
+  def error_list
+    return @error_list if defined?(@error_list)
+    @error_list = '[' + @object.errors[@attribute].map{|error| %("#{error}") }.join(', ') + ']'
   end
 end

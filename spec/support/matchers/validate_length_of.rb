@@ -5,77 +5,82 @@ RSpec::Matchers.define :validate_length_of do |expected, options|
   @attribute = expected
   
   match do |actual|
-    validate_minimum_of object, @options[:minimum] if @options[:minimum]
-    validate_maximum_of object, @options[:maximum] if @options[:maximum]
-    validate_exact_length_of object, @options[:is] if @options[:is]
-    validate_range_of object, @options[:within] if @options[:within]
+    @object = actual.is_a?(Class) ? actual.new : actual
+    @result = true
+
+    validate_minimum_of(@options[:minimum]) if @options[:minimum]
+    validate_maximum_of(@options[:maximum]) if @options[:maximum]
+    validate_exact_length_of(@options[:is]) if @options[:is]
+    validate_range_of(@options[:within]) if @options[:within]
+    
+    @result
   end
 
   failure_message_for_should do |actual|
-    %(expected #{object.class}'s #{@attribute} errors to contain "#{@options[:message]}")
+    %(expected #{@object.class}'s #{@attribute} errors #{error_list}\nto contain: "#{@options[:message]}")
   end
 
   failure_message_for_should_not do |actual|
-    %(expected #{object.class}'s #{@attribute} errors not to contain "#{@options[:message]}")
+    %(expected #{@object.class}'s #{@attribute} errors #{error_list}\nnot to contain "#{@options[:message]}")
   end
 
   description do
     "validate the length of #{@attribute}"
   end
   
-  def validate_minimum_of object, minimum
+  def validate_minimum_of minimum
     string = 'x' * minimum
     
     set_to string
-    object.valid?
-    object.errors[@attribute].should_not include(@options[:message])
+    @object.valid?
+    @result &&= !@object.errors[@attribute].include?(@options[:message])
 
     set_to string.chop
-    object.should_not be_valid
-    object.errors[@attribute].should include(@options[:message])
+    @result &&= !@object.valid?
+    @result &&= @object.errors[@attribute].include?(@options[:message])
   end
 
-  def validate_maximum_of object, maximum
+  def validate_maximum_of maximum
     string = 'x' * maximum
     
     set_to string
-    object.valid?
-    object.errors[@attribute].should_not include(@options[:message])
-
+    @object.valid?
+    @result &&= !@object.errors[@attribute].include?(@options[:message])
+    
     set_to string + 'x'
-    object.should_not be_valid
-    object.errors[@attribute].should include(@options[:message])
+    @result &&= !@object.valid?
+    @result &&= @object.errors[@attribute].include?(@options[:message])
   end
   
-  def validate_exact_length_of object, length
+  def validate_exact_length_of length
     string = 'x' * length
     
     set_to string
-    object.valid?
-    object.errors[@attribute].should_not include(@options[:message])
+    @object.valid?
+    @result &&= !@object.errors[@attribute].include?(@options[:message])
 
     set_to string.chop
-    object.should_not be_valid
-    object.errors[@attribute].should include(@options[:message])
+    @result &&= !@object.valid?
+    @result &&= @object.errors[@attribute].include?(@options[:message])
 
     set_to string + 'xx'
-    object.should_not be_valid
-    object.errors[@attribute].should include(@options[:message])
+    @result &&= !@object.valid?
+    @result &&= @object.errors[@attribute].include?(@options[:message])
   end
   
-  def validate_range_of object, range
+  def validate_range_of range
     minimum, maximum = [range.first, range.last].sort
     
-    validate_minimum_of object, minimum
-    validate_maximum_of object, maximum
+    @result &&= validate_minimum_of minimum
+    @result &&= validate_maximum_of maximum
   end
 
-  def object
-    return @object if defined?(@object)
-    @object = actual.is_a?(Class) ? actual.new : actual
+  def set_to value
+    @object.send("#{@attribute}=", value)
   end
   
-  def set_to value
-    object.send("#{@attribute}=", value)
+  def error_list
+    return @error_list if defined?(@error_list)
+    @error_list = '[' + @object.errors[@attribute].map{|error| %("#{error}") }.join(', ') + ']'
   end
 end
